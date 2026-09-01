@@ -64,3 +64,6 @@ El sistema se compone de los siguientes módulos internos:
 * **Capa de Negocio y Datos (`AuthService.java`, `Usuario.java`, `UsuarioRepository.java`):** Procesa la lógica de autenticación y gestiona la comunicación con la base de datos mediante Spring Data JPA.
 * **Manejo de Errores (`GlobalExceptionHandler.java` & `ErrorResponse.java`):** Intercepta excepciones como `MalCredencialException` y genera respuestas JSON limpias y estructuradas con códigos HTTP pertinentes.
 * **Migraciones SQL (`V1__crea_tabla_auth.sql` & `V2__insertar_usuarios.sql`):** Mantienen el control de versiones sobre la estructura de la base de datos e insertan los registros iniciales para pruebas.
+
+### Uso de GEMINI IA
+-Se realizo el uso de IA para la orientacion al momento de la creacion del pipeline y para la claritud de diferentes conceptos que no se llegaban a conocer como tambien guia al no entender errores o mal uso de los comandos 
