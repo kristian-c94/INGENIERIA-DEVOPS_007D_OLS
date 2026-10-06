@@ -37,6 +37,11 @@ jobs:
       - name: Clonar código
         uses: actions/checkout@v4
 
+      - name: Convert Repo Name to Lowercase
+        id: repo_name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -57,4 +62,4 @@ jobs:
           file: ${{ matrix.context }}/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ strToLower(github.repository) }}/${{ matrix.name }}:latest
+          tags: ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
