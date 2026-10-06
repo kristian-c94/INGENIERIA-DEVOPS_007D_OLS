@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: Clientes
+    name: cliente
 
   datasource:
     url: jdbc:mysql://localhost:3306/db_tiendamusical
@@ -11,13 +11,8 @@ spring:
     password:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    table: flyway_schema_history_cliente
-
+    enabled: false
 
   jpa:
     hibernate:

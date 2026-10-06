@@ -1,0 +1,125 @@
+# Connects to Laragon MySQL on host (not a containerized MySQL)
+
+services:
+  # 1. Servicio de Autenticación
+  auth-service:
+    build:
+      context: ./auth-Service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "${PORT_AUTH}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    networks:
+      - tienda-network
+
+  # 2. Servicio de Cliente
+  cliente-service:
+    build:
+      context: ./cliente
+      dockerfile: Dockerfile
+    container_name: cliente
+    ports:
+      - "${PORT_CLIENTE}:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    depends_on:
+      - auth-service
+    networks:
+      - tienda-network
+
+  # 3. Servicio de Productos
+  producto-service:
+    build:
+      context: ./productos
+      dockerfile: Dockerfile
+    container_name: productos
+    ports:
+      - "${PORT_PRODUCTOS}:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_FLYWAY_REPAIR_ON_MIGRATE=true
+      - SPRING_FLYWAY_OUT_OF_ORDER=true
+    networks:
+      - tienda-network
+
+  # 4. Servicio de Pedidos
+  pedidos-service:
+    build:
+      context: ./pedidos
+      dockerfile: Dockerfile
+    container_name: pedidos
+    ports:
+      - "${PORT_PEDIDOS}:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    depends_on:
+      - auth-service
+      - producto-service
+    networks:
+      - tienda-network
+
+  # 5. Servicio de Devoluciones
+  devoluciones-service:
+    build:
+      context: ./devolucion
+      dockerfile: Dockerfile
+    container_name: devoluciones
+    ports:
+      - "${PORT_DEVOLUCIONES}:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    networks:
+      - tienda-network
+
+  # 6. Servicio de Reclamos
+  reclamo-service:
+    build:
+      context: ./reclamos
+      dockerfile: Dockerfile
+    container_name: reclamos
+    ports:
+      - "${PORT_RECLAMOS}:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    networks:
+      - tienda-network
+
+  # 7. Servicio Técnico
+  serviciotecnico-service:
+    build:
+      context: ./servicioTecnico
+      dockerfile: Dockerfile
+    container_name: servicioTecnico
+    ports:
+      - "${PORT_SERVICIO_TECNICO}:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=
+    networks:
+      - tienda-network
+
+networks:
+  tienda-network:
+    driver: bridge

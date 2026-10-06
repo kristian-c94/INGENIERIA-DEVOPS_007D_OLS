@@ -3,7 +3,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE productos;
 SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO productos (numero_serie, nombre_producto, tipo_instrumento, descripcion, precio_instrumento, precio_arriendo, venta_arriendo, estado, fecha_registro)
+INSERT INTO productos (numeroSerie, nombreProducto, tipoInstrumento, descripcion, precioInstrumento, precioArriendo, ventaArriendo, estado, fechaRegistro)
 VALUES
     ('SN-STRAT-001', 'Fender Stratocaster', 'Cuerdas', 'Guitarra eléctrica clásica color Sunburst', 1200000, 45000, 'Venta', 'Disponible', '2026-01-10'),
     ('SN-YAM-P45', 'Yamaha P-45', 'Teclado', 'Piano digital de 88 teclas pesadas', 450000, 25000, 'Arriendo', 'Disponible', '2026-02-15'),
