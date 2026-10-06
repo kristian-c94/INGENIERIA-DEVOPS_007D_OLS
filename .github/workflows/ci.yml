@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - name: auth-service
-            context: ./auth-Service
+            context: ./auth-service
           - name: cliente-service
             context: ./cliente
           - name: producto-service
