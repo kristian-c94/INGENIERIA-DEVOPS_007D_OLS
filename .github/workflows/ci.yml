@@ -1,4 +1,4 @@
-name: Integración Continua (CI Pipeline)
+name: Integracion Continua (CI Pipeline)
 
 on:
   push:
@@ -7,8 +7,84 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
+  # =======================================================
+  # PRUEBAS UNITARIAS, COBERTURA Y ANÁLISIS ESTÁTICO (SNYK + SONAR)
+  # =======================================================
+  test:
+    name: Pruebas Unitarias, Cobertura y Análisis de Seguridad
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-Service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicioTecnico
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Requiere el historial completo para SonarCloud
+
+      - name: Configurar Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # 1. Ejecutar Pruebas Unitarias y Generar JaCoCo XML/HTML
+      - name: Ejecutar Pruebas Unitarias con Maven
+        run: |
+          cd ${{ matrix.service }}
+          mvn clean test -Dspring.profiles.active=test
+
+      # 2. Subir Reportes HTML de JaCoCo como Artefactos
+      - name: Subir Reporte HTML de JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/site/jacoco/
+          retention-days: 5
+
+      # 3. Escaneo de Vulnerabilidades con Snyk (Setup CLI)
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
+
+      - name: Run Snyk test
+        run: snyk test --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          MAVEN_OPTS: "-Xmx1024m -XX:MaxMetaspaceSize=256m"
+        continue-on-error: true
+
+      - name: Run Snyk monitor
+        run: snyk monitor --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          MAVEN_OPTS: "-Xmx1024m -XX:MaxMetaspaceSize=256m"
+
+      # 4. Análisis de Calidad y Cobertura con SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: ${{ matrix.service }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =======================================================
+  # Build Docker & Push a GHCR
+  # =======================================================
   docker:
-    name: Levantar microservicios
+    name: Build and Push Microservices
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,22 +110,22 @@ jobs:
       packages: write
 
     steps:
-      - name: Clonar código
+      - name: Clonar codigo
         uses: actions/checkout@v4
 
-      - name: Convertir nombre del repositorio a minusculas
+      - name: Convert Repo Name to Lowercase
         id: repo_name
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
