@@ -67,9 +67,15 @@ jobs:
           - devolucion
           - reclamos
           - servicioTecnico
+
     permissions:
       contents: read
       pull-requests: read
+
+    # Aumentar límite de memoria para Java / Maven en todo el job
+    env:
+      MAVEN_OPTS: "-Xmx3072m"
+      NODE_OPTIONS: "--max-old-space-size=4096"
 
     steps:
       - name: Clonar repositorio
@@ -82,10 +88,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Pre-compilar dependencias del microservicio
+      - name: Pre-compilar dependencias e instalar artefactos locales
         run: |
           cd ${{ matrix.service }}
-          mvn dependency:resolve -q
+          mvn test-compile -DskipTests -q
 
       - name: Setup Snyk CLI
         uses: snyk/actions/setup@master
@@ -94,14 +100,12 @@ jobs:
         run: snyk test --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          NODE_OPTIONS: "--max-old-space-size=4096"
         continue-on-error: true
 
       - name: Run Snyk monitor
         run: snyk monitor --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          NODE_OPTIONS: "--max-old-space-size=4096"
         continue-on-error: true
 
   # =======================================================
