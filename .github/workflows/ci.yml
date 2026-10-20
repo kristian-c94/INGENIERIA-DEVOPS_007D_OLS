@@ -8,10 +8,10 @@ on:
 
 jobs:
   # =======================================================
-  # PRUEBAS UNITARIAS, COBERTURA Y ANÁLISIS ESTÁTICO (SNYK + SONAR)
+  # 1. PRUEBAS UNITARIAS Y GENERACIÓN DE JACOCO
   # =======================================================
   test:
-    name: Pruebas Unitarias, Cobertura y Análisis de Seguridad
+    name: Pruebas Unitarias
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -28,8 +28,6 @@ jobs:
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Requiere el historial completo para SonarCloud
 
       - name: Configurar Java JDK 21
         uses: actions/setup-java@v4
@@ -38,13 +36,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 1. Ejecutar Pruebas Unitarias y Generar JaCoCo XML/HTML
       - name: Ejecutar Pruebas Unitarias con Maven
         run: |
           cd ${{ matrix.service }}
           mvn clean test -Dspring.profiles.active=test
 
-      # 2. Subir Reportes HTML de JaCoCo como Artefactos
       - name: Subir Reporte HTML de JaCoCo
         if: always()
         uses: actions/upload-artifact@v4
@@ -53,17 +49,47 @@ jobs:
           path: ${{ matrix.service }}/target/site/jacoco/
           retention-days: 5
 
-      # 1. Asegurar la compilación ligera previa para que Snyk no tenga que resolver dependencias desde cero
+  # =======================================================
+  # 2. ESCANEO DE SEGURIDAD Y VULNERABILIDADES (SNYK)
+  # =======================================================
+  snyk:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-Service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicioTecnico
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
       - name: Pre-compilar dependencias del microservicio
         run: |
           cd ${{ matrix.service }}
           mvn dependency:resolve -q
 
-      # 2. Configurar Snyk CLI
       - name: Setup Snyk CLI
         uses: snyk/actions/setup@master
 
-      # 3. Ejecutar Snyk Test sin fallar por subprocesos de Maven
       - name: Run Snyk test
         run: snyk test --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
         env:
@@ -71,7 +97,6 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=4096"
         continue-on-error: true
 
-      # 4. Ejecutar Snyk Monitor
       - name: Run Snyk monitor
         run: snyk monitor --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
         env:
@@ -80,11 +105,47 @@ jobs:
         continue-on-error: true
 
   # =======================================================
-  # Build Docker & Push a GHCR
+  # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
+  # =======================================================
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-Service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicioTecnico
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: ${{ matrix.service }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =======================================================
+  # 4. BUILD DOCKER & PUSH A GHCR
   # =======================================================
   docker:
     name: Build and Push Microservices
-    needs: test
+    needs: [test, snyk, sonarcloud]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
