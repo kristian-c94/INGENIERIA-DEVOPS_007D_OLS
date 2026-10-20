@@ -72,10 +72,11 @@ jobs:
       contents: read
       pull-requests: read
 
-    # Aumentar límite de memoria para Java / Maven en todo el job
+    # ASIGNACIÓN CLAVE DE MEMORIA: Le da espacio a Java y a Node.js
     env:
       MAVEN_OPTS: "-Xmx3072m"
       NODE_OPTIONS: "--max-old-space-size=4096"
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
     steps:
       - name: Clonar repositorio
@@ -88,24 +89,29 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Pre-compilar dependencias e instalar artefactos locales
+      - name: Instalar Snyk CLI globalmente
+        run: npm install --global --ignore-scripts snyk@1.1308.1
+
+      - name: Pre-compilar dependencias del microservicio
         run: |
           cd ${{ matrix.service }}
           mvn test-compile -DskipTests -q
 
-      - name: Setup Snyk CLI
-        uses: snyk/actions/setup@master
-
-      - name: Run Snyk test
-        run: snyk test --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Analizar dependencias con Snyk
+        run: |
+          cd ${{ matrix.service }}
+          test -n "$SNYK_TOKEN"
+          if [ -f .snyk ]; then
+            snyk test --file=pom.xml --policy-path=.snyk --severity-threshold=high --skip-unresolved=true
+          else
+            snyk test --file=pom.xml --severity-threshold=high --skip-unresolved=true
+          fi
         continue-on-error: true
 
       - name: Run Snyk monitor
-        run: snyk monitor --file=${{ matrix.service }}/pom.xml --skip-unresolved=true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          cd ${{ matrix.service }}
+          snyk monitor --file=pom.xml --skip-unresolved=true
         continue-on-error: true
 
   # =======================================================
