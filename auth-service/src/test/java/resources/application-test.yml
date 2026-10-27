@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: productos        # cámbialo en cada micro
+
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  flyway:
+    enabled: false         # en test no usamos las migraciones de MySQL
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Hibernate crea las tablas desde tus @Entity
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+# Solo si el micro usa JWT (auth-service y los que validan tokens)
+jwt:
+  secret: clave-de-prueba-solo-para-tests-muy-larga-1234567890
+  expiration-ms: 3600000
