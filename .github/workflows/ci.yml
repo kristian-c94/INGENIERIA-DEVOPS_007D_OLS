@@ -90,7 +90,9 @@ jobs:
         working-directory: ${{ matrix.service }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --severity-threshold=high --skip-unresolved
+        run: |
+          mvn -B dependency:tree
+          snyk test -d --severity-threshold=high --skip-unresolved
 
   # =======================================================
   # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
@@ -120,19 +122,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Descargar reporte de cobertura JaCoCo
-        uses: actions/download-artifact@v4
+      - name: Configurar Java JDK 21
+        uses: actions/setup-java@v4
         with:
-          name: jacoco-report-${{ matrix.service }}
-          path: ${{ matrix.service }}/target/site/jacoco/
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: ${{ matrix.service }}
+      - name: Compilar y analizar con SonarCloud
+        working-directory: ${{ matrix.service }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dspring.profiles.active=test
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=kristian-c94
+          -Dsonar.projectKey=kristian-c94_${{ matrix.service }}
 
   # =======================================================
   # 4. BUILD DOCKER & PUSH A GHCR
