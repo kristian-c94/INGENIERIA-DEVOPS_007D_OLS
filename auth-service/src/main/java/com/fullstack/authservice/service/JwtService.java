@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service.service;
+package com.fullstack.authservice.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

@@ -1,9 +1,9 @@
-package com.fullstack.auth-service.service;
+package com.fullstack.authservice.service;
 
-import com.fullstack.auth-service.dto.LoginResponse;
-import com.fullstack.auth-service.exception.MalCredencialException;
-import com.fullstack.auth-service.model.Usuario;
-import com.fullstack.auth-service.repository.UsuarioRepository;
+import com.fullstack.authservice.dto.LoginResponse;
+import com.fullstack.authservice.exception.MalCredencialException;
+import com.fullstack.authservice.model.Usuario;
+import com.fullstack.authservice.repository.UsuarioRepository;
 import org.hibernate.exception.AuthException;
 import org.springframework.stereotype.Service;
 
