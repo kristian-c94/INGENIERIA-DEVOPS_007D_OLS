@@ -1,0 +1,178 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ${DB_NAME:-tienda_db}
+      MYSQL_USER: ${DB_USER:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tienda-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  auth-service:
+    build:
+      context: auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "${PORT_AUTH:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/auth-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tienda-network
+
+  cliente-service:
+    build:
+      context: ./cliente
+      dockerfile: Dockerfile
+    container_name: cliente
+    ports:
+      - "${PORT_CLIENTE:-8081}:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/cliente-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - tienda-network
+
+
+  producto-service:
+    build:
+      context: ./productos
+      dockerfile: Dockerfile
+    container_name: productos
+    ports:
+      - "${PORT_PRODUCTOS:-8083}:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_FLYWAY_REPAIR_ON_MIGRATE=true
+      - SPRING_FLYWAY_OUT_OF_ORDER=true
+    volumes:
+      - ./logs/producto-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tienda-network
+
+  pedidos-service:
+    build:
+      context: ./pedidos
+      dockerfile: Dockerfile
+    container_name: pedidos
+    ports:
+      - "${PORT_PEDIDOS:-8085}:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/pedidos-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      producto-service:
+        condition: service_started
+    networks:
+      - tienda-network
+
+  devoluciones-service:
+    build:
+      context: ./devolucion
+      dockerfile: Dockerfile
+    container_name: devoluciones
+    ports:
+      - "${PORT_DEVOLUCIONES:-8086}:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/devoluciones-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tienda-network
+
+  reclamo-service:
+    build:
+      context: ./reclamos
+      dockerfile: Dockerfile
+    container_name: reclamos
+    ports:
+      - "${PORT_RECLAMOS:-8082}:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/reclamo-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tienda-network
+
+  # 7. Servicio Técnico
+  serviciotecnico-service:
+    build:
+      context: servicio-tecnico
+      dockerfile: Dockerfile
+    container_name: servicioTecnico
+    ports:
+      - "${PORT_SERVICIO_TECNICO:-8084}:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-default}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/${DB_NAME:-tienda_db}?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - ./logs/serviciotecnico-service:/app/logs
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tienda-network
+
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  tienda-network:
+    driver: bridge
