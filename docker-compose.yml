@@ -20,7 +20,7 @@ services:
       retries: 5
   auth-service:
     build:
-      context: ./auth-Service
+      context: auth-service
       dockerfile: Dockerfile
     container_name: auth-service
     ports:
@@ -150,7 +150,7 @@ services:
   # 7. Servicio Técnico
   serviciotecnico-service:
     build:
-      context: ./servicioTecnico
+      context: servicio-tecnico
       dockerfile: Dockerfile
     container_name: servicioTecnico
     ports:
