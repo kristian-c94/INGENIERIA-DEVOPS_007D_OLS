@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>tiendaMusical</groupId>
-    <artifactId>servicioTecnico</artifactId>
+    <artifactId>servicio-tecnico</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>servicioTecnico</name>
     <description>Microservicio de Servicio Tecnico</description>
