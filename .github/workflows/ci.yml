@@ -86,7 +86,7 @@ jobs:
         uses: snyk/actions/setup@master
 
       - name: Analizar dependencias con Snyk
-        continue-on-error: true
+        continue-on-error: false
         working-directory: ${{ matrix.service }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
