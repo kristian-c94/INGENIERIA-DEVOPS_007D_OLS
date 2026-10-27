@@ -82,15 +82,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Ejecutar Snyk CLI
+      - name: Instalar Snyk CLI
         uses: snyk/actions/setup@master
 
       - name: Analizar dependencias con Snyk
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          NODE_OPTIONS: "--max-old-space-size=2048"
         run: |
           cd ${{ matrix.service }}
-          snyk test --severity-threshold=high --skip-unresolved=true
+          snyk test --file=pom.xml --severity-threshold=high --skip-unresolved=true
 
   # =======================================================
   # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
