@@ -67,12 +67,10 @@ jobs:
           - devolucion
           - reclamos
           - servicioTecnico
-
     permissions:
       contents: read
       pull-requests: read
 
-    # ASIGNACIÓN CLAVE DE MEMORIA: Le da espacio a Java y a Node.js
     env:
       MAVEN_OPTS: "-Xmx3072m"
       NODE_OPTIONS: "--max-old-space-size=4096"
@@ -106,13 +104,11 @@ jobs:
           else
             snyk test --file=pom.xml --severity-threshold=high --skip-unresolved=true
           fi
-        continue-on-error: true
 
       - name: Run Snyk monitor
         run: |
           cd ${{ matrix.service }}
           snyk monitor --file=pom.xml --skip-unresolved=true
-        continue-on-error: true
 
   # =======================================================
   # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
@@ -141,6 +137,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Descargar reporte de cobertura JaCoCo
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-report-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/site/jacoco/
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5
@@ -175,7 +177,6 @@ jobs:
             context: ./reclamos
           - name: serviciotecnico-service
             context: ./servicioTecnico
-
     permissions:
       contents: read
       packages: write
@@ -209,4 +210,6 @@ jobs:
           file: ${{ matrix.context }}/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+          tags: |
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:${{ github.sha }}
