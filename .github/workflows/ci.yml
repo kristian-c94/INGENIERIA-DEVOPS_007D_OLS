@@ -82,12 +82,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Ejecutar Snyk Scan usando Acción Oficial
-        uses: snyk/actions/maven@master
+      - name: Ejecutar Snyk CLI
+        uses: snyk/actions/setup@master
+
+      - name: Analizar dependencias con Snyk
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --file=${{ matrix.service }}/pom.xml --severity-threshold=high --skip-unresolved=true
+        run: |
+          cd ${{ matrix.service }}
+          snyk test --severity-threshold=high --skip-unresolved=true
 
   # =======================================================
   # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
@@ -126,4 +129,66 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5
         with:
-          project
+          projectBaseDir: ${{ matrix.service }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =======================================================
+  # 4. BUILD DOCKER & PUSH A GHCR
+  # =======================================================
+  docker:
+    name: Build and Push Microservices
+    needs: [test, snyk, sonarcloud]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: auth-service
+            context: ./auth-Service
+          - name: cliente-service
+            context: ./cliente
+          - name: producto-service
+            context: ./productos
+          - name: pedidos-service
+            context: ./pedidos
+          - name: devoluciones-service
+            context: ./devolucion
+          - name: reclamo-service
+            context: ./reclamos
+          - name: serviciotecnico-service
+            context: ./servicioTecnico
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Clonar codigo
+        uses: actions/checkout@v4
+
+      - name: Convert Repo Name to Lowercase
+        id: repo_name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          push: true
+          platforms: linux/
