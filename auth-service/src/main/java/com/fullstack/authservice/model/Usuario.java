@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service.model;
+package com.fullstack.authservice.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

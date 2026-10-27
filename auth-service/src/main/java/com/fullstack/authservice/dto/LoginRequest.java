@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service.dto;
+package com.fullstack.authservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

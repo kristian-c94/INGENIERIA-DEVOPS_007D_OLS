@@ -1,8 +1,8 @@
-package com.fullstack.Auth_Service.controller;
+package com.fullstack.authservice.controller;
 
-import com.fullstack.Auth_Service.dto.LoginRequest;
-import com.fullstack.Auth_Service.dto.LoginResponse;
-import com.fullstack.Auth_Service.service.AuthService;
+import com.fullstack.authservice.dto.LoginRequest;
+import com.fullstack.authservice.dto.LoginResponse;
+import com.fullstack.authservice.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

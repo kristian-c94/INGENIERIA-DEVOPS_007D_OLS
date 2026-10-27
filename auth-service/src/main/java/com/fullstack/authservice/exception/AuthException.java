@@ -1,4 +1,4 @@
-package com.fullstack.auth-service.exception;
+package com.fullstack.authservice.exception;
 
 public class AuthException extends RuntimeException {
     public AuthException(String message) {

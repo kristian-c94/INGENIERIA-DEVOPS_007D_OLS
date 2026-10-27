@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service;
+package com.fullstack.authservice;
 
 import com.fullstack.Auth_Service.model.Usuario;
 import org.junit.jupiter.api.Test;

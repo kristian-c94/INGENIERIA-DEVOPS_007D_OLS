@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service.dto;
+package com.fullstack.authservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

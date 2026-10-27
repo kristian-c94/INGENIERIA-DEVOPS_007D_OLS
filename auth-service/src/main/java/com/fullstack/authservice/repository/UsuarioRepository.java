@@ -1,6 +1,6 @@
-package com.fullstack.Auth_Service.repository;
+package com.fullstack.authservice.repository;
 
-import com.fullstack.Auth_Service.model.Usuario;
+import com.fullstack.authservice.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

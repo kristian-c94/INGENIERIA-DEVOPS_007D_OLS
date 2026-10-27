@@ -1,4 +1,4 @@
-package com.fullstack.Auth_Service;
+package com.fullstack.authservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

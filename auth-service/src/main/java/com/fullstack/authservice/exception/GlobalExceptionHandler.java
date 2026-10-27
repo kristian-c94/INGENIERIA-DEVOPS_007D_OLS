@@ -1,6 +1,6 @@
-package com.fullstack.Auth_Service.exception;
+package com.fullstack.authservice.exception;
 
-import com.fullstack.Auth_Service.dto.ErrorResponse;
+import com.fullstack.authservice.dto.ErrorResponse;
 import jakarta.security.auth.message.AuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
