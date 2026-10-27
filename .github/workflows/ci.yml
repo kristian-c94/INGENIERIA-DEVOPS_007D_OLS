@@ -17,13 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - auth-Service
+          - auth-service
           - cliente
           - productos
           - pedidos
           - devolucion
           - reclamos
-          - servicioTecnico
+          - servicio-tecnico
 
     steps:
       - name: Clonar repositorio
@@ -60,13 +60,13 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - auth-Service
+          - auth-service
           - cliente
           - productos
           - pedidos
           - devolucion
           - reclamos
-          - servicioTecnico
+          - servicio-tecnico
     permissions:
       contents: read
       pull-requests: read
@@ -101,13 +101,13 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - auth-Service
+          - auth-service
           - cliente
           - productos
           - pedidos
           - devolucion
           - reclamos
-          - servicioTecnico
+          - servicio-tecnico
     permissions:
       contents: read
       pull-requests: read
@@ -144,7 +144,7 @@ jobs:
       matrix:
         include:
           - name: auth-service
-            context: ./auth-Service
+            context: ./auth-service
           - name: cliente-service
             context: ./cliente
           - name: producto-service
@@ -155,8 +155,8 @@ jobs:
             context: ./devolucion
           - name: reclamo-service
             context: ./reclamos
-          - name: serviciotecnico-service
-            context: ./servicioTecnico
+          - name: servicio-tecnico-service
+            context: ./servicio-tecnico
     permissions:
       contents: read
       packages: write
