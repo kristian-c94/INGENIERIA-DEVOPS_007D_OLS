@@ -1,14 +1,14 @@
-name: Integracion Continua (CI Pipeline)
+name: Integracion y Despliegue Continuo (CI/CD Pipeline)
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
   # =======================================================
-  # 1. PRUEBAS UNITARIAS Y GENERACIÓN DE JACOCO
+  # 1. PRUEBAS UNITARIAS, JACOCO Y MÉTRICA EN CLOUDWATCH
   # =======================================================
   test:
     name: Pruebas Unitarias
@@ -40,6 +40,37 @@ jobs:
         run: |
           cd ${{ matrix.service }}
           mvn clean test -Dspring.profiles.active=test
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Enviar porcentaje de cobertura JaCoCo a CloudWatch
+        run: |
+          XML_PATH="${{ matrix.service }}/target/site/jacoco/jacoco.xml"
+          if [ -f "$XML_PATH" ]; then
+            COVERAGE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          root = ET.parse('$XML_PATH').getroot()
+          counter = [c for c in root.findall('counter') if c.attrib['type'] == 'LINE'][0]
+          missed, covered = int(counter.attrib['missed']), int(counter.attrib['covered'])
+          print(round((covered / (missed + covered)) * 100, 2) if (missed + covered) > 0 else 0)
+          ")
+          else
+            COVERAGE=0
+          fi
+          echo "Cobertura de ${{ matrix.service }}: ${COVERAGE}%"
+          aws cloudwatch put-metric-data \
+            --namespace "TiendaMusical/CICD" \
+            --metric-name "CoberturaPruebas" \
+            --dimensions Servicio=${{ matrix.service }} \
+            --value $COVERAGE \
+            --unit Percent \
+            --region us-east-1
 
       - name: Subir Reporte HTML de JaCoCo
         if: always()
@@ -129,7 +160,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Compilar y analizar con SonarCloud
+      - name: Compilar y analizar con SonarCloud (bloquea si falla Quality Gate)
         working-directory: ${{ matrix.service }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -139,6 +170,7 @@ jobs:
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.organization=kristian-c94
           -Dsonar.projectKey=kristian-c94_${{ matrix.service }}
+          -Dsonar.qualitygate.wait=true
 
   # =======================================================
   # 4. BUILD DOCKER & PUSH A GHCR
@@ -199,3 +231,49 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+
+  # =======================================================
+  # 5. DESPLIEGUE AUTOMATIZADO A AWS EKS + MÉTRICAS CI/CD
+  # =======================================================
+  deploy-eks:
+    name: Deploy to AWS EKS
+    needs: [test, snyk, sonarcloud, docker]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Conectar kubectl al clúster EKS
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name tienda-musical-eks
+
+      - name: Aplicar manifiestos Kubernetes y medir tiempo de despliegue
+        id: deploy
+        run: |
+          START_TIME=$(date +%s)
+          kubectl apply -f k8s/
+          kubectl rollout restart deployment -n tienda
+          kubectl rollout status deployment/auth-service -n tienda --timeout=180s
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "DEPLOY_DURATION=$DURATION" >> $GITHUB_OUTPUT
+          echo "Despliegue completado en ${DURATION} segundos"
+
+      - name: Enviar tiempo de despliegue a AWS CloudWatch
+        run: |
+          aws cloudwatch put-metric-data \
+            --namespace "TiendaMusical/CICD" \
+            --metric-name "TiempoDespliegueSegundos" \
+            --value ${{ steps.deploy.outputs.DEPLOY_DURATION }} \
+            --unit Seconds \
+            --region us-east-1

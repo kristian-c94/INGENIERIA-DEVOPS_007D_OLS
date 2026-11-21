@@ -1,0 +1,290 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/auth-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: tienda
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliente-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cliente-service
+  template:
+    metadata:
+      labels:
+        app: cliente-service
+    spec:
+      containers:
+        - name: cliente-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/cliente-service:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliente-service
+  namespace: tienda
+spec:
+  selector:
+    app: cliente-service
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reclamo-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reclamo-service
+  template:
+    metadata:
+      labels:
+        app: reclamo-service
+    spec:
+      containers:
+        - name: reclamo-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/reclamo-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reclamo-service
+  namespace: tienda
+spec:
+  selector:
+    app: reclamo-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producto-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producto-service
+  template:
+    metadata:
+      labels:
+        app: producto-service
+    spec:
+      containers:
+        - name: producto-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/producto-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+            - name: SPRING_FLYWAY_REPAIR_ON_MIGRATE
+              value: "true"
+            - name: SPRING_FLYWAY_OUT_OF_ORDER
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: producto-service
+  namespace: tienda
+spec:
+  selector:
+    app: producto-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicio-tecnico-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servicio-tecnico-service
+  template:
+    metadata:
+      labels:
+        app: servicio-tecnico-service
+    spec:
+      containers:
+        - name: servicio-tecnico-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/servicio-tecnico-service:latest
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servicio-tecnico-service
+  namespace: tienda
+spec:
+  selector:
+    app: servicio-tecnico-service
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedidos-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pedidos-service
+  template:
+    metadata:
+      labels:
+        app: pedidos-service
+    spec:
+      containers:
+        - name: pedidos-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/pedidos-service:latest
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pedidos-service
+  namespace: tienda
+spec:
+  selector:
+    app: pedidos-service
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devoluciones-service
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devoluciones-service
+  template:
+    metadata:
+      labels:
+        app: devoluciones-service
+    spec:
+      containers:
+        - name: devoluciones-service
+          image: ghcr.io/kristian-c94/INGENIERIA-DEVOPS_007D_OLS/devoluciones-service:latest
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/db_tiendamusical?allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devoluciones-service
+  namespace: tienda
+spec:
+  selector:
+    app: devoluciones-service
+  ports:
+    - name: http
+      port: 8086
+      targetPort: 8086
