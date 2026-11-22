@@ -24,11 +24,11 @@ public class JwtService {
         Date expira = new Date(ahora.getTime() + expirationMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .subject(username)
                 .claim("rol", rol)
-                .setIssuedAt(ahora)
-                .setExpiration(expira)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .issuedAt(ahora)
+                .expiration(expira)
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
