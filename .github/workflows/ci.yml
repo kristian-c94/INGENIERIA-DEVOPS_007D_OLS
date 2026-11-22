@@ -113,6 +113,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Instalar Snyk CLI
+        run: npm install -g snyk
+
       - name: Analizar dependencias con Snyk
         working-directory: ${{ matrix.service }}
         env:
