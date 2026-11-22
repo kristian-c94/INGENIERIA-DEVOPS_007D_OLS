@@ -123,7 +123,7 @@ jobs:
         run: |
           if [ -f mvnw ]; then chmod +x mvnw; fi
           mvn -B dependency:tree
-          snyk test --severity-threshold=high --skip-unresolved
+          snyk test --severity-threshold=high --skip-unresolved --policy-path=../.snyk
 
   # =======================================================
   # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
