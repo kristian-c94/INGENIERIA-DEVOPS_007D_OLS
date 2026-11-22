@@ -164,14 +164,13 @@ jobs:
         working-directory: ${{ matrix.service }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          unset GITHUB_ACTIONS GITHUB_REF GITHUB_HEAD_REF GITHUB_BASE_REF GITHUB_EVENT_NAME
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dspring.profiles.active=test \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.organization=kristian-c94 \
-            -Dsonar.projectKey=kristian-c94_${{ matrix.service }} \
-            -Dsonar.qualitygate.wait=true
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dspring.profiles.active=test
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=kristian-c94
+          -Dsonar.projectKey=kristian-c94_${{ matrix.service }}
+          -Dsonar.qualitygate.wait=true
 
   # =======================================================
   # 4. BUILD DOCKER & PUSH A GHCR
