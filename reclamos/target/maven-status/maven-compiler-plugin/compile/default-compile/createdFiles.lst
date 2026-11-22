@@ -1,0 +1,12 @@
+com\fullstack\reclamos\controller\ReclamosController.class
+com\fullstack\reclamos\exception\GlobalExceptionHandler.class
+com\fullstack\reclamos\model\Reclamos.class
+com\fullstack\reclamos\repository\ReclamosRepository.class
+com\fullstack\reclamos\ReclamosApplication.class
+com\fullstack\reclamos\service\ReclamosService.class
+com\fullstack\reclamos\dto\ReclamosRequest.class
+com\fullstack\reclamos\security\JwtAuthenticationsFilter.class
+com\fullstack\reclamos\dto\ApiErrorResponse.class
+com\fullstack\reclamos\webClient\ClienteClient.class
+com\fullstack\reclamos\security\JwtService.class
+com\fullstack\reclamos\config\SecurityConfig.class
