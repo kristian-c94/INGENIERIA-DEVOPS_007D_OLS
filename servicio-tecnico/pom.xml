@@ -12,7 +12,7 @@
 
     <!-- CAMBIA ESTAS 4 LINEAS EN CADA SERVICIO: conserva las que ya tenia su pom -->
     <groupId>com.fullstack</groupId>
-    <artifactId>auth-Service</artifactId>
+    <artifactId>servicio-tecnico</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>servicio-tecnico</name>
     <description>Microservicio de Autenticación</description>
