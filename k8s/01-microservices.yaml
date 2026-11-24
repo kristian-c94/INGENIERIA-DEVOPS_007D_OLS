@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: auth-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -68,6 +70,8 @@ kind: Deployment
 metadata:
   name: cliente-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -133,6 +137,8 @@ kind: Deployment
 metadata:
   name: reclamo-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -198,6 +204,8 @@ kind: Deployment
 metadata:
   name: producto-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -267,6 +275,8 @@ kind: Deployment
 metadata:
   name: servicio-tecnico-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -332,6 +342,8 @@ kind: Deployment
 metadata:
   name: pedidos-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:
@@ -397,6 +409,8 @@ kind: Deployment
 metadata:
   name: devoluciones-service
   namespace: tienda
+  labels:
+    tier: app
 spec:
   replicas: 1
   selector:

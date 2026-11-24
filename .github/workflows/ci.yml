@@ -41,15 +41,8 @@ jobs:
           cd ${{ matrix.service }}
           mvn clean test -Dspring.profiles.active=test
 
-      - name: Configurar credenciales AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Enviar porcentaje de cobertura JaCoCo a CloudWatch
+      - name: Calcular cobertura JaCoCo y exigir minimo
+        id: cobertura
         run: |
           XML_PATH="${{ matrix.service }}/target/site/jacoco/jacoco.xml"
           if [ -f "$XML_PATH" ]; then
@@ -63,12 +56,35 @@ jobs:
           else
             COVERAGE=0
           fi
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_OUTPUT
           echo "Cobertura de ${{ matrix.service }}: ${COVERAGE}%"
+          # Politica de calidad: el pipeline se detiene si la cobertura queda bajo el minimo
+          MIN="${{ vars.COVERAGE_MIN || '50' }}"
+          if (( $(echo "$COVERAGE < $MIN" | bc -l) )); then
+            echo "::error::Cobertura ${COVERAGE}% menor al minimo exigido (${MIN}%)"
+            exit 1
+          fi
+
+      - name: Configurar credenciales AWS
+        if: always()
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Enviar porcentaje de cobertura JaCoCo a CloudWatch
+        if: always()
+        continue-on-error: true
+        run: |
+          COVERAGE="${{ steps.cobertura.outputs.COVERAGE }}"
           aws cloudwatch put-metric-data \
             --namespace "TiendaMusical/CICD" \
             --metric-name "CoberturaPruebas" \
             --dimensions Servicio=${{ matrix.service }} \
-            --value $COVERAGE \
+            --value ${COVERAGE:-0} \
             --unit Percent \
             --region us-east-1
 
@@ -116,7 +132,7 @@ jobs:
       - name: Instalar Snyk CLI
         run: npm install -g snyk
 
-      - name: Analizar dependencias con Snyk
+      - name: Analizar dependencias con Snyk (falla con severidad alta o critica)
         working-directory: ${{ matrix.service }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -165,12 +181,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar
           -Dspring.profiles.active=test
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.organization=kristian-c94
           -Dsonar.projectKey=kristian-c94_${{ matrix.service }}
-          -Dsonar.qualitygate.wait=false
+          -Dsonar.qualitygate.wait=true
 
   # =======================================================
   # 4. BUILD DOCKER & PUSH A GHCR
@@ -230,7 +246,9 @@ jobs:
           file: ${{ matrix.context }}/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+          tags: |
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:${{ github.sha }}
 
   # =======================================================
   # 5. DESPLIEGUE AUTOMATIZADO A AWS EKS + MÉTRICAS CI/CD
@@ -264,7 +282,7 @@ jobs:
           kubectl apply -f k8s/
           kubectl rollout restart deployment -n tienda -l tier=app
           for d in $(kubectl get deploy -n tienda -l tier=app -o name); do
-          kubectl rollout status $d -n tienda --timeout=300s
+            kubectl rollout status $d -n tienda --timeout=300s
           done
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
@@ -278,4 +296,11 @@ jobs:
             --metric-name "TiempoDespliegueSegundos" \
             --value ${{ steps.deploy.outputs.DEPLOY_DURATION }} \
             --unit Seconds \
+            --region us-east-1
+
+      - name: Publicar dashboard de CloudWatch
+        run: |
+          aws cloudwatch put-dashboard \
+            --dashboard-name "TiendaMusical-CICD" \
+            --dashboard-body file://monitoring/dashboard.json \
             --region us-east-1

@@ -1,0 +1,99 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0, "y": 0, "width": 24, "height": 2,
+      "properties": {
+        "markdown": "# Tienda Musical - Observabilidad CI/CD\nCobertura de pruebas y tiempo de despliegue vienen del pipeline (namespace TiendaMusical/CICD). CPU, memoria, disponibilidad y errores vienen de Container Insights sobre el cluster tienda-musical-eks."
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 2, "width": 12, "height": 6,
+      "properties": {
+        "title": "Cobertura de pruebas por servicio (%)",
+        "region": "us-east-1",
+        "view": "singleValue",
+        "stat": "Maximum",
+        "period": 86400,
+        "setPeriodToTimeRange": true,
+        "metrics": [
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "auth-service"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "cliente"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "productos"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "pedidos"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "devolucion"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "reclamos"],
+          ["TiendaMusical/CICD", "CoberturaPruebas", "Servicio", "servicio-tecnico"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 2, "width": 12, "height": 6,
+      "properties": {
+        "title": "Tiempo de despliegue (segundos)",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "stat": "Maximum",
+        "period": 3600,
+        "metrics": [
+          ["TiendaMusical/CICD", "TiempoDespliegueSegundos"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 8, "width": 12, "height": 6,
+      "properties": {
+        "title": "Uso de CPU - namespace tienda (%)",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          ["ContainerInsights", "pod_cpu_utilization", "ClusterName", "tienda-musical-eks", "Namespace", "tienda"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 8, "width": 12, "height": 6,
+      "properties": {
+        "title": "Uso de memoria - namespace tienda (%)",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          ["ContainerInsights", "pod_memory_utilization", "ClusterName", "tienda-musical-eks", "Namespace", "tienda"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 14, "width": 12, "height": 6,
+      "properties": {
+        "title": "Disponibilidad: pods en ejecucion y reinicios",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "stat": "Maximum",
+        "period": 300,
+        "metrics": [
+          ["ContainerInsights", "namespace_number_of_running_pods", "ClusterName", "tienda-musical-eks", "Namespace", "tienda"],
+          ["ContainerInsights", "pod_number_of_container_restarts", "ClusterName", "tienda-musical-eks", "Namespace", "tienda"]
+        ]
+      }
+    },
+    {
+      "type": "log",
+      "x": 12, "y": 14, "width": 12, "height": 6,
+      "properties": {
+        "title": "Errores registrados en los microservicios",
+        "region": "us-east-1",
+        "view": "table",
+        "query": "SOURCE '/aws/containerinsights/tienda-musical-eks/application' | fields @timestamp, kubernetes.pod_name, log | filter log like /ERROR/ | sort @timestamp desc | limit 50"
+      }
+    }
+  ]
+}
