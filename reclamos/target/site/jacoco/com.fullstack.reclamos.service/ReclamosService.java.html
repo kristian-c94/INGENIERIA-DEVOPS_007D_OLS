@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReclamosService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reclamos</a> &gt; <a href="index.source.html" class="el_package">com.fullstack.reclamos.service</a> &gt; <span class="el_source">ReclamosService.java</span></div><h1>ReclamosService.java</h1><pre class="source lang-java linenums">package com.fullstack.reclamos.service;
+
+import com.fullstack.reclamos.dto.ReclamosRequest;
+import com.fullstack.reclamos.model.Reclamos;
+import com.fullstack.reclamos.repository.ReclamosRepository;
+import com.fullstack.reclamos.webClient.ClienteClient;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+
+@Service
+@Transactional
+<span class="nc" id="L16">public class ReclamosService {</span>
+
+    @Autowired
+    private ReclamosRepository reclamosRepository;
+
+    @Autowired
+    private ClienteClient clienteClient;
+
+<span class="nc" id="L24">    public List&lt;Reclamos&gt; listar() {return reclamosRepository.findAll();}</span>
+
+<span class="nc" id="L26">    public Reclamos buscarPorId(Integer id) {return reclamosRepository.findById(id).orElse(null);}</span>
+
+<span class="nc" id="L28">    public Reclamos guardar(Reclamos reclamos) {return reclamosRepository.save(reclamos);}</span>
+
+    public Reclamos crearDesdeRequest(ReclamosRequest request, String token){
+<span class="nc" id="L31">        Map&lt;String, Object&gt; cliente = clienteClient.obtenerClienteId(request.getClienteId(), token);</span>
+<span class="nc bnc" id="L32" title="All 4 branches missed.">        if(cliente == null || cliente.isEmpty()){</span>
+<span class="nc" id="L33">            throw new RuntimeException(&quot;Cliente no encontrado, no se puede agregar reclamo&quot;);</span>
+        }
+<span class="nc" id="L35">        Reclamos reclamos = new Reclamos();</span>
+<span class="nc" id="L36">        reclamos.setAsunto(request.getAsunto());</span>
+<span class="nc" id="L37">        reclamos.setDescripcion(request.getDescripcion());</span>
+<span class="nc" id="L38">        reclamos.setFechaRegistro(request.getFechaRegistro());</span>
+<span class="nc" id="L39">        reclamos.setClienteId(request.getClienteId());</span>
+<span class="nc" id="L40">        String nombre = (String) cliente.get(&quot;nombre&quot;);</span>
+<span class="nc" id="L41">        String apellido = (String) cliente.get(&quot;apellido&quot;);</span>
+<span class="nc" id="L42">        reclamos.setNombreCliente(nombre + &quot; &quot; + apellido);</span>
+<span class="nc" id="L43">        return guardar(reclamos);</span>
+    }
+
+    public boolean eliminar(Integer id) {
+<span class="nc" id="L47">        Reclamos reclamos = buscarPorId(id);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if(reclamos == null){</span>
+<span class="nc" id="L49">            return false;</span>
+        }
+<span class="nc" id="L51">        reclamosRepository.deleteById(id);</span>
+<span class="nc" id="L52">        return true;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

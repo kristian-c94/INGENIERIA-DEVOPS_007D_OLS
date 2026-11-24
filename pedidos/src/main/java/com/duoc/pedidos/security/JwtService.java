@@ -28,13 +28,13 @@ import java.nio.charset.StandardCharsets;
                 return false;
             }
         }
-            private Claims extraerClaims(String token) {
-                return Jwts.parserBuilder()
-                        .setSigningKey(getSigningKey())
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody();
-            }
+        private Claims extraerClaims(String token) {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        }
         private SecretKey getSigningKey() {
             return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         }

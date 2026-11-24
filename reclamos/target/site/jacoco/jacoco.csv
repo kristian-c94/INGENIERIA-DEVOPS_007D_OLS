@@ -1,0 +1,9 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+reclamos,com.fullstack.reclamos.webClient,ClienteClient,51,0,0,0,12,0,5,0,5,0
+reclamos,com.fullstack.reclamos.controller,ReclamosController,56,0,6,0,16,0,9,0,6,0
+reclamos,com.fullstack.reclamos.config,SecurityConfig,87,0,0,0,20,0,9,0,9,0
+reclamos,com.fullstack.reclamos.security,JwtAuthenticationsFilter,57,0,6,0,16,0,5,0,2,0
+reclamos,com.fullstack.reclamos.security,JwtService,33,0,0,0,12,0,5,0,5,0
+reclamos,com.fullstack.reclamos,ReclamosApplication,8,0,0,0,3,0,2,0,2,0
+reclamos,com.fullstack.reclamos.service,ReclamosService,91,0,6,0,21,0,9,0,6,0
+reclamos,com.fullstack.reclamos.exception,GlobalExceptionHandler,77,0,0,0,20,0,4,0,4,0

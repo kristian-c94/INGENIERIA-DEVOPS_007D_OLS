@@ -10,12 +10,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.List;
+
 @Entity
 @Table(name = "devoluciones")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class Devolucion {
 
     @Id
@@ -34,20 +34,18 @@ public class Devolucion {
     @Column(nullable = false)
     private String motivo;
 
-        @Column(nullable = false)
-        private String nombreCliente;
+    @Column(nullable = false)
+    private String nombreCliente;
 
-        @Column(unique = true, length = 20, nullable = true)
-        private String numeroSerie;
+    @Column(unique = true, length = 20, nullable = true)
+    private String numeroSerie;
 
-        @Column(nullable = false)
-        private String nombreProducto;
+    @Column(nullable = false)
+    private String nombreProducto;
 
-        @Column(nullable = true)
-        private Integer precioInstrumento;
+    @Column(nullable = true)
+    private Integer precioInstrumento;
 
-        @Column(nullable = false)
-        private Integer precio
-
-
+    @Column(nullable = false)
+    private Integer precio;
 }

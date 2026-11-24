@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReclamosController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reclamos</a> &gt; <a href="index.source.html" class="el_package">com.fullstack.reclamos.controller</a> &gt; <span class="el_source">ReclamosController.java</span></div><h1>ReclamosController.java</h1><pre class="source lang-java linenums">package com.fullstack.reclamos.controller;
+
+import com.fullstack.reclamos.dto.ReclamosRequest;
+import com.fullstack.reclamos.model.Reclamos;
+import com.fullstack.reclamos.service.ReclamosService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/reclamos&quot;)
+<span class="nc" id="L16">public class ReclamosController {</span>
+
+    @Autowired
+    private ReclamosService reclamosService;
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;Reclamos&gt;&gt; listarReclamos(){
+<span class="nc" id="L23">        List&lt;Reclamos&gt; reclamos = reclamosService.listar();</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if(reclamos.isEmpty()){</span>
+<span class="nc" id="L25">            return ResponseEntity.noContent().build();</span>
+        }
+<span class="nc" id="L27">        return ResponseEntity.ok(reclamos);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getReclamosPorId(@PathVariable Integer id){
+<span class="nc" id="L32">        Reclamos reclamos = reclamosService.buscarPorId(id);</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if(reclamos == null){</span>
+<span class="nc" id="L34">            return ResponseEntity.notFound().build();</span>
+        }
+<span class="nc" id="L36">        return ResponseEntity.ok(reclamos);</span>
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;?&gt; crearReclamos(@Valid @RequestBody ReclamosRequest request, @RequestHeader(&quot;Authorization&quot;) String token){
+<span class="nc" id="L41">        Reclamos reclamosGuardado = reclamosService.crearDesdeRequest(request, token);</span>
+<span class="nc" id="L42">        return ResponseEntity.status(HttpStatus.CREATED).body(reclamosGuardado);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; eliminarReclamos(@PathVariable Integer id){
+<span class="nc" id="L47">        boolean eliminado = reclamosService.eliminar(id);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if(!eliminado){</span>
+<span class="nc" id="L49">            return ResponseEntity.notFound().build();</span>
+        }
+<span class="nc" id="L51">        return ResponseEntity.noContent().build();</span>
+    }
+
+    @GetMapping(&quot;/publico&quot;)
+    public ResponseEntity&lt;String&gt; publico(){
+<span class="nc" id="L56">        return ResponseEntity.ok(&quot;Endpoint público - Tienda musical&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

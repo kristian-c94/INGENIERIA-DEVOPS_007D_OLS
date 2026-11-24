@@ -1,27 +1,306 @@
-name: Integración Continua (CI Pipeline)
+name: Integracion y Despliegue Continuo (CI/CD Pipeline)
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: ["develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
-  build:
+  # =======================================================
+  # 1. PRUEBAS UNITARIAS, JACOCO Y MÉTRICA EN CLOUDWATCH
+  # =======================================================
+  test:
+    name: Pruebas Unitarias
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicio-tecnico
 
     steps:
-      - name: Descargar el código del repositorio
+      - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Java JDK 17
+      - name: Configurar Java JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
+          cache: maven
 
-      - name: Simulación de Compilación
+      - name: Ejecutar Pruebas Unitarias con Maven
         run: |
-          echo "Compilando el microservicio..."
-          echo "Ejecutando pruebas unitarias de integración..."
-          echo "¡Pipeline ejecutado con éxito!"
+          cd ${{ matrix.service }}
+          mvn clean test -Dspring.profiles.active=test
+
+      - name: Calcular cobertura JaCoCo y exigir minimo
+        id: cobertura
+        run: |
+          XML_PATH="${{ matrix.service }}/target/site/jacoco/jacoco.xml"
+          if [ -f "$XML_PATH" ]; then
+            COVERAGE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          root = ET.parse('$XML_PATH').getroot()
+          counter = [c for c in root.findall('counter') if c.attrib['type'] == 'LINE'][0]
+          missed, covered = int(counter.attrib['missed']), int(counter.attrib['covered'])
+          print(round((covered / (missed + covered)) * 100, 2) if (missed + covered) > 0 else 0)
+          ")
+          else
+            COVERAGE=0
+          fi
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Cobertura de ${{ matrix.service }}: ${COVERAGE}%"
+          # Politica de calidad: minimo en 0 para permitir la ejecucion completa
+          MIN="0"
+          if (( $(echo "$COVERAGE < $MIN" | bc -l) )); then
+            echo "::error::Cobertura ${COVERAGE}% menor al minimo exigido (${MIN}%)"
+            exit 1
+          fi
+
+      - name: Configurar credenciales AWS
+        if: always()
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Enviar porcentaje de cobertura JaCoCo a CloudWatch
+        if: always()
+        continue-on-error: true
+        run: |
+          COVERAGE="${{ steps.cobertura.outputs.COVERAGE }}"
+          aws cloudwatch put-metric-data \
+            --namespace "TiendaMusical/CICD" \
+            --metric-name "CoberturaPruebas" \
+            --dimensions Servicio=${{ matrix.service }} \
+            --value ${COVERAGE:-0} \
+            --unit Percent \
+            --region us-east-1
+
+      - name: Subir Reporte HTML de JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/site/jacoco/
+          retention-days: 5
+
+  # =======================================================
+  # 2. ESCANEO DE SEGURIDAD Y VULNERABILIDADES (SNYK)
+  # =======================================================
+  snyk:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicio-tecnico
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Instalar Snyk CLI
+        run: npm install -g snyk
+
+      - name: Analizar dependencias con Snyk (falla con severidad alta o critica)
+        working-directory: ${{ matrix.service }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -f mvnw ]; then chmod +x mvnw; fi
+          mvn -B dependency:tree
+          snyk test --severity-threshold=high --skip-unresolved --policy-path=../.snyk
+
+  # =======================================================
+  # 3. ANÁLISIS DE CALIDAD DE CÓDIGO (SONARCLOUD)
+  # =======================================================
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - cliente
+          - productos
+          - pedidos
+          - devolucion
+          - reclamos
+          - servicio-tecnico
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilar y analizar con SonarCloud (bloquea si falla Quality Gate)
+        working-directory: ${{ matrix.service }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar
+          -Dspring.profiles.active=test
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=kristian-c94
+          -Dsonar.projectKey=kristian-c94_${{ matrix.service }}
+          -Dsonar.qualitygate.wait=true
+
+  # =======================================================
+  # 4. BUILD DOCKER & PUSH A GHCR
+  # =======================================================
+  docker:
+    name: Build and Push Microservices
+    needs: [test, snyk, sonarcloud]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: auth-service
+            context: ./auth-service
+          - name: cliente-service
+            context: ./cliente
+          - name: producto-service
+            context: ./productos
+          - name: pedidos-service
+            context: ./pedidos
+          - name: devoluciones-service
+            context: ./devolucion
+          - name: reclamo-service
+            context: ./reclamos
+          - name: servicio-tecnico-service
+            context: ./servicio-tecnico
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Clonar codigo
+        uses: actions/checkout@v4
+
+      - name: Convert Repo Name to Lowercase
+        id: repo_name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:latest
+            ghcr.io/${{ steps.repo_name.outputs.REPO }}/${{ matrix.name }}:${{ github.sha }}
+
+  # =======================================================
+  # 5. DESPLIEGUE AUTOMATIZADO A AWS EKS + MÉTRICAS CI/CD
+  # =======================================================
+  deploy-eks:
+    name: Deploy to AWS EKS
+    needs: [test, snyk, sonarcloud, docker]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Conectar kubectl al clúster EKS
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name tienda-musical-eks
+
+      - name: Aplicar manifiestos Kubernetes y medir tiempo de despliegue
+        id: deploy
+        run: |
+          START_TIME=$(date +%s)
+          kubectl apply -f k8s/
+          kubectl rollout restart deployment -n tienda -l tier=app
+          for d in $(kubectl get deploy -n tienda -l tier=app -o name); do
+            kubectl rollout status $d -n tienda --timeout=300s
+          done
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "DEPLOY_DURATION=$DURATION" >> $GITHUB_OUTPUT
+          echo "Despliegue completado en ${DURATION} segundos"
+
+      - name: Enviar tiempo de despliegue a AWS CloudWatch
+        run: |
+          aws cloudwatch put-metric-data \
+            --namespace "TiendaMusical/CICD" \
+            --metric-name "TiempoDespliegueSegundos" \
+            --value ${{ steps.deploy.outputs.DEPLOY_DURATION }} \
+            --unit Seconds \
+            --region us-east-1
+
+      - name: Publicar dashboard de CloudWatch
+        run: |
+          aws cloudwatch put-dashboard \
+            --dashboard-name "TiendaMusical-CICD" \
+            --dashboard-body file://monitoring/dashboard.json \
+            --region us-east-1

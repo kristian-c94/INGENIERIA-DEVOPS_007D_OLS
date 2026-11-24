@@ -1,0 +1,12 @@
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\config\SecurityConfig.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\controller\ReclamosController.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\dto\ApiErrorResponse.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\dto\ReclamosRequest.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\exception\GlobalExceptionHandler.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\model\Reclamos.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\ReclamosApplication.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\repository\ReclamosRepository.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\security\JwtAuthenticationsFilter.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\security\JwtService.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\service\ReclamosService.java
+C:\Users\Pastr\Desktop\Tienda Musical\reclamos\src\main\java\com\fullstack\reclamos\webClient\ClienteClient.java
