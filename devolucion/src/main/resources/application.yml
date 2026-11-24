@@ -36,3 +36,17 @@ pedidos-service:
 
 cliente-service:
   url: http://localhost:8081/api/clientes
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

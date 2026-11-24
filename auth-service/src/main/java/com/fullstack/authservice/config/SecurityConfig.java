@@ -16,6 +16,7 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable()) // Crucial para que Postman pueda hacer POST
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/auth/login", "/auth/publico").permitAll() // Deja pasar estas rutas
                         .anyRequest().authenticated() // Bloquea todo lo demás
                 )

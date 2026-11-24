@@ -262,8 +262,10 @@ jobs:
         run: |
           START_TIME=$(date +%s)
           kubectl apply -f k8s/
-          kubectl rollout restart deployment -n tienda
-          kubectl rollout status deployment/auth-service -n tienda --timeout=180s
+          kubectl rollout restart deployment -n tienda -l tier=app
+          for d in $(kubectl get deploy -n tienda -l tier=app -o name); do
+          kubectl rollout status $d -n tienda --timeout=300s
+          done
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "DEPLOY_DURATION=$DURATION" >> $GITHUB_OUTPUT

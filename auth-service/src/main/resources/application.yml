@@ -28,3 +28,17 @@ spring:
 jwt:
   secret: laClaveDeLaTiendaDeMusicaEstanLargaLoSuficiente
   expiration-ms: 3600000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
